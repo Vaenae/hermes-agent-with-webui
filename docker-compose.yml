@@ -1,0 +1,46 @@
+name: hermes-agent-with-webui
+
+services:
+  webui:
+    # Builds the image from the Dockerfile in ./hermes-webui. Replace the whole
+    # `build:` block with `image: ghcr.io/nesquena/hermes-webui:0.52.302` if you
+    # do not need the headless browser.
+    build:
+      context: ./hermes-webui
+    image: hermes-webui-web:0.52.302
+    restart: unless-stopped
+    # Chromium allocates well beyond Docker's 64 MB default /dev/shm and exits
+    # roughly a second after launch when it runs out, with nothing useful in the
+    # logs. Do not remove this.
+    shm_size: 1gb
+    ports:
+      - "8787:8787"
+    environment:
+      # Consumed by Hermes' bundled searxng web provider.
+      SEARXNG_URL: http://searxng:8080
+    volumes:
+      - hermes-home:/home/hermeswebui/.hermes
+      - workspace:/workspace
+    depends_on:
+      - searxng
+
+  searxng:
+    # Pinned, not `latest`: the settings file is written against this version's
+    # `use_default_settings` merge behaviour.
+    image: docker.io/searxng/searxng:2026.9.8-3fdc6d753
+    restart: unless-stopped
+    environment:
+      # Without this the container generates a fresh secret on every start.
+      SEARXNG_SECRET: ${SEARXNG_SECRET:?set SEARXNG_SECRET in .env — see .env.example}
+    volumes:
+      - ./searxng:/etc/searxng:Z
+      - searxng-data:/var/cache/searxng
+    # No published port on purpose: only the webui container queries this.
+    # Uncomment to browse the UI while debugging.
+    # ports:
+    #   - "8080:8080"
+
+volumes:
+  hermes-home:
+  workspace:
+  searxng-data:
