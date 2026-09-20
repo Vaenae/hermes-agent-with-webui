@@ -2,12 +2,9 @@ name: hermes-agent-with-webui
 
 services:
   webui:
-    # Builds the image from the Dockerfile in ./hermes-webui. Replace the whole
-    # `build:` block with `image: ghcr.io/nesquena/hermes-webui:0.52.302` if you
-    # do not need the headless browser.
-    build:
-      context: ./hermes-webui
-    image: hermes-webui-web:0.52.302
+    # Published by .github/workflows/publish-hermes-webui.yml. Override the
+    # variable to pin a release or commit tag in production.
+    image: ${HERMES_WEBUI_IMAGE:-ghcr.io/vaenae/hermes-webui:latest}
     restart: unless-stopped
     # Chromium allocates well beyond Docker's 64 MB default /dev/shm and exits
     # roughly a second after launch when it runs out, with nothing useful in the
